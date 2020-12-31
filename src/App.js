@@ -12,7 +12,7 @@ import Clarifai from 'clarifai';
 
 //initializing with the API key.
 const app = new Clarifai.App({
- apiKey: '403fe53c1d5443ed9aeace2b39b21b3b'
+ apiKey: 'd16583df0b654ddabfbf8dab4591c19d'
 });
 
 const particlesOptions = {
@@ -33,25 +33,35 @@ class App extends Component {
     super();
     this.state = {
       input: '',
+      imageUrl: ''
     }
   }
   onInputChange = (event) => {
-    console.log(event.target.value);
+    this.setState({input: event.target.value});
   }
   onButtonSubmit = () => {
-    console.log('click');
-    app.models
-      .predict(
-        Clarifai., 
-        "https://samples.clarifai.com/face-det.jpg")
+    this.setState({imageUrl: this.state.input});
+    /*app.models
+      .predict(Clarifai.COLOR_MODEL,"https://samples.clarifai.com/face-det.jpg")
       .then(
-      function(response){
-        console.log(response);
-      },
-      function(err){
+        function(response){
+          console.log(response);
+        },
+        function(err){
 
-      });
-  }
+        }
+      );
+    }*/
+    app.models.initModel({id: Clarifai.COLOR_MODEL, version: "aa7f35c01e0642fda5cf400f543e7c40"})
+      .then(generalModel => {
+        return generalModel.predict(this.state.input);
+      })
+      .then(response => {
+        var concepts = response['outputs'][0]['data']['concepts']
+        console.log(concepts);
+    });
+    }
+  
   render(){
     return (
       <div className="App">
@@ -65,7 +75,7 @@ class App extends Component {
           onInputChange={this.onInputChange} 
           onButtonSubmit={this.onButtonSubmit}
         />
-        <FaceRecognition />
+        <FaceRecognition imageUrl={this.state.imageUrl}/>
       </div>
     );
   }
