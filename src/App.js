@@ -37,9 +37,31 @@ class App extends Component {
       imageUrl: '',
       box:{},
       route: 'signIn',
-      isSignedIn: false
+      isSignedIn: false,
+      user: {
+          id: '',
+          name: '',
+          email: '',
+          entries: 0,
+          joined: ''
+      }
     }
   }
+
+  loadUser = (data) => {
+    this.setState({user:{
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        entries: data.entries,
+        joined: data.joined
+    }})
+  }
+  /*componentDidMount() {
+    fetch('http://localhost:3000')
+      .then(response => response.json())
+      .then(console.log)
+  }*/
   calculateFaceLocation = (data) => { 
     const clarifaiFaceBox = data.outputs[0].data.regions[0].region_info.bounding_box;
     const image = document.getElementById('inputImage');
@@ -63,7 +85,22 @@ class App extends Component {
     this.setState({imageUrl: this.state.input});
     app.models
       .predict(Clarifai.FACE_DETECT_MODEL,this.state.input)
-      .then(response => this.displayFaceBox(this.calculateFaceLocation(response)))
+      .then(response => {
+        if(response){
+          fetch('http://localhost:3000/image', {
+              method: 'put',
+              headers: {'Content-Type' : 'application/json'},
+              body: JSON.stringify({
+              id:this.state.user.id
+          })
+        })
+          .then(response => response.json())
+          .then(count => {
+            this.setState(Object.assign(this.state.user,{entries:count}))
+          })
+      }
+        this.displayFaceBox(this.calculateFaceLocation(response))
+      })
         .catch(err => console.log(err));
     }
     /*app.models.initModel({id: Clarifai.COLOR_MODEL, version: "aa7f35c01e0642fda5cf400f543e7c40"})
@@ -96,7 +133,7 @@ onRouteChange = (route) =>{
         {route === 'home'
         ? <div>
               <Logo />
-              <Rank />
+              <Rank name = {this.state.user.name} entries={this.state.user.entries}/>
               <ImageLinkForm  
                 onInputChange={this.onInputChange} 
                 onButtonSubmit={this.onButtonSubmit}
@@ -105,8 +142,8 @@ onRouteChange = (route) =>{
           </div>
           : (
           route === 'signIn'
-          ? <SignIn onRouteChange = {this.onRouteChange}/>
-            : <Register onRouteChange = {this.onRouteChange}/>
+          ? <SignIn loadUser = {this.loadUser} onRouteChange = {this.onRouteChange}/>
+            : <Register loadUser = {this.loadUser} onRouteChange = {this.onRouteChange}/>
           )
       }
       </div>
